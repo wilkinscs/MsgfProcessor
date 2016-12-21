@@ -52,7 +52,7 @@
             this.BrowseCommand = ReactiveCommand.Create(this.BrowseImpl);
 
             this.WhenAnyValue(x => x.FilePath)
-                .Select(_ => this.CheckValid())
+                .Select(filePath => !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath))
                 .ToProperty(this, x => x.IsValid, out this.isValid);
 
             this.FilePath = string.Empty;
@@ -63,6 +63,7 @@
         /// Default empty constructor.
         /// </summary>
         public FileSelectorViewModel()
+            : this(string.Empty, true, string.Empty, string.Empty)
         {
         }
 
@@ -89,15 +90,6 @@
         /// Gets a value indicating whether the <see cref="FilePath" /> is not empty and exists.
         /// </summary>
         public bool IsValid => this.isValid?.Value ?? false;
-
-        /// <summary>
-        /// Checks to see if <see cref="FilePath" /> is not empty and exists.
-        /// </summary>
-        /// <returns>A value indicating whether the file path is valid.</returns>
-        public bool CheckValid()
-        {
-            return !string.IsNullOrWhiteSpace(this.FilePath) && File.Exists(this.FilePath);
-        }
 
         /// <summary>
         /// Opens a file dialog for the file selection.

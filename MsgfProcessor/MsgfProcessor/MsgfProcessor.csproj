@@ -89,12 +89,17 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ViewModels\IonTypeFactoryViewModel.cs" />
+    <Compile Include="ViewModels\SelectableItemViewModel.cs" />
     <Compile Include="Views\FileSelectorControl.xaml.cs">
       <DependentUpon>FileSelectorControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ViewModels\IonTypeViewModel.cs" />
     <Compile Include="Model\ResultProcessor.cs" />
     <Page Include="Views\FileSelectorControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\IonTypeSelectorControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -107,6 +112,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ViewModels\FileSelectorViewModel.cs" />
+    <Compile Include="Views\IonTypeSelectorControl.xaml.cs">
+      <DependentUpon>IonTypeSelectorControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

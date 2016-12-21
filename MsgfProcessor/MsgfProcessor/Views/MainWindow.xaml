@@ -7,11 +7,8 @@
         xmlns:views="clr-namespace:MsgfProcessor.Views"
         xmlns:viewModels="clr-namespace:MsgfProcessor.ViewModels"
         mc:Ignorable="d"
-        Title="Sequence Coverage Calculator" Height="350" Width="700">
-
-    <Window.DataContext>
-        <viewModels:MainWindowViewModel />
-    </Window.DataContext>
+        Title="Sequence Coverage Calculator" Height="380" Width="700"
+        d:DataContext="{d:DesignInstance d:Type=viewModels:MainWindowViewModel, IsDesignTimeCreatable=True}">
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -28,6 +25,8 @@
                 <RowDefinition Height="60" />   <!-- Mzid file selector -->
                 <RowDefinition Height="15" />   <!-- Spacer -->
                 <RowDefinition Height="60" />   <!-- Output file selector -->
+                <RowDefinition Height="15" />   <!-- Spacer -->
+                <RowDefinition Height="60" />   <!-- Ion Type selector -->
             </Grid.RowDefinitions>
 
             <!-- Raw file selector -->
@@ -38,6 +37,9 @@
 
             <!-- Output file selector -->
             <views:FileSelectorControl Grid.Row="4" DataContext="{Binding OutputFileSelector}" />
+            
+            <!-- Ion Type selector -->
+            <views:IonTypeSelectorControl Grid.Row="6" DataContext="{Binding IonTypeFactoryViewModel}" />
         </Grid>
 
         <!-- Progress bar and Start/Cancel buttons-->

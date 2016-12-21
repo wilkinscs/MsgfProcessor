@@ -8,10 +8,19 @@ using System.Windows;
 
 namespace MsgfProcessor
 {
+    using MsgfProcessor.ViewModels;
+    using MsgfProcessor.Views;
+
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application
     {
+        private void App_OnStartup(object sender, StartupEventArgs e)
+        {
+            var mainWindowViewModel = new MainWindowViewModel();
+            var mainWindow = new MainWindow { DataContext = mainWindowViewModel };
+            mainWindow.Show();
+        }
     }
 }

@@ -30,12 +30,12 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="ResultProcessor" /> class. 
         /// </summary>
+        /// <param name="ionTypeFactory">Factory for generating correct ions and neutral losses.</param>
         /// <param name="tolerance">The peak tolerance.</param>
-        /// <param name="maxCharge">Maximum charge possible in dataset. For preloading ion types.</param>
-        public ResultProcessor(Tolerance tolerance = null, int maxCharge = 10)
+        public ResultProcessor(IonTypeFactory ionTypeFactory, Tolerance tolerance = null)
         {
             this.tolerance = tolerance ?? new Tolerance(10, ToleranceUnit.Ppm);
-            this.ionTypeFactory = new IonTypeFactory(maxCharge);
+            this.ionTypeFactory = ionTypeFactory;
         }
 
         /// <summary>
@@ -48,7 +48,7 @@
         /// <returns>Awaitable task which returns a list of processed IDs on completion.</returns>
         public Task<List<ProcessedResult>> ProcessAsync(string rawFilePath, string idFilePath, CancellationToken cancellationToken, IProgress<ProgressData> progress = null)
         {
-            return Task.Run(() => this.Process(rawFilePath, idFilePath, cancellationToken, progress));
+            return Task.Run(() => this.Process(rawFilePath, idFilePath, cancellationToken, progress), cancellationToken);
         }
 
         /// <summary>
@@ -71,10 +71,10 @@
 
             // Read mzid file
             var mzidReader = new SimpleMZIdentMLReader();
-            var results = mzidReader.Read(idFilePath, cancellationToken);
+            var identifications = mzidReader.Read(idFilePath, cancellationToken);
 
             // Group IDs into a hash by scan number
-            var idMap = results.Identifications.GroupBy(id => id.ScanNum).ToDictionary(scan => scan.Key, ids => ids);
+            var idMap = identifications.Identifications.GroupBy(id => id.ScanNum).ToDictionary(scan => scan.Key, ids => ids);
 
             var processedResults = new List<ProcessedResult>();
 
@@ -85,11 +85,14 @@
                 foreach (var spectrum in lcms.ReadAllSpectra())
                 {
                     if (cancellationToken.IsCancellationRequested)
-                    {
+                    {   // Cancel if necessary
                         return new List<ProcessedResult>();
                     }
 
+                    // Report completion percentage and current scan number
                     progressData.Report(count++, lcms.NumSpectra, $"Scan: {spectrum?.ScanNum ?? '-'}");
+
+                    // Skip spectrum if it isn't MS2
                     var productSpectrum = spectrum as ProductSpectrum;
                     if (productSpectrum == null || !idMap.ContainsKey(spectrum.ScanNum))
                     {
@@ -98,29 +101,26 @@
 
                     var specResults = idMap[spectrum.ScanNum];
 
-                    foreach (var specResult in specResults)
-                    {
-                        var sequence = specResult.Peptide.GetIpSequence();  // Parse text sequence
+                    var results = from specResult in specResults
+                                  let sequence = specResult.Peptide.GetIpSequence()
+                                  let coverage = this.CalculateSequenceCoverage(productSpectrum, sequence, specResult.Charge)
+                                  select new ProcessedResult
+                                  {
+                                      ScanNum = spectrum.ScanNum,
+                                      Sequence = sequence,
+                                      Charge = specResult.Charge,
+                                      PrecursorMz = specResult.CalMz,
+                                      DeNovoScore = specResult.DeNovoScore,
+                                      SpecEValue = specResult.SpecEv,
+                                      EValue = specResult.EValue,
+                                      QValue = specResult.QValue,
+                                      PepQValue = specResult.PepQValue,
+                                      FragMethod = productSpectrum.ActivationMethod,
+                                      IsotopeError = specResult.IsoError,
+                                      SequenceCoverage = Math.Round(coverage),
+                                  };
 
-                        // Calculate sequence coverage.
-                        var coverage = this.CalculateSequenceCoverage(productSpectrum, sequence, specResult.Charge);
-
-                        processedResults.Add(new ProcessedResult
-                        {
-                            ScanNum = spectrum.ScanNum,
-                            Sequence = sequence,
-                            Charge = specResult.Charge,
-                            PrecursorMz = specResult.CalMz,
-                            DeNovoScore = specResult.DeNovoScore,
-                            SpecEValue = specResult.SpecEv,
-                            EValue = specResult.EValue,
-                            QValue = specResult.QValue,
-                            PepQValue = specResult.PepQValue,
-                            FragMethod = productSpectrum.ActivationMethod,
-                            IsotopeError = specResult.IsoError,
-                            SequenceCoverage = Math.Round(coverage),
-                        });
-                    }
+                    processedResults.AddRange(results);
                 }
             }
 

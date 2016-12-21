@@ -75,6 +75,8 @@
                                     true,
                                     ".tsv", @"TSV Files (*.tsv)|*.tsv");
 
+            this.IonTypeFactoryViewModel = new IonTypeFactoryViewModel { MaxChargeState = 10 };
+
             // Set up progress reporter.
             this.progressReporter = new Progress<ProgressData>(
                 pd =>
@@ -136,6 +138,11 @@
         public FileSelectorViewModel OutputFileSelector { get; }
 
         /// <summary>
+        /// Gets the view model for selecting ion types and neutral losses.
+        /// </summary>
+        public IonTypeFactoryViewModel IonTypeFactoryViewModel { get; }
+
+        /// <summary>
         /// Gets a command that runs the spectrum processing.
         /// </summary>
         public ReactiveCommand<Unit, Unit> RunCommand { get; }
@@ -183,7 +190,7 @@
         /// </summary>
         private async Task RunImpl()
         {
-            var processor = new ResultProcessor();
+            var processor = new ResultProcessor(this.IonTypeFactoryViewModel.IonTypeFactory);
 
             var results = await processor.ProcessAsync(
                 this.RawFileSelector.FilePath, 
@@ -209,6 +216,8 @@
             progressData.Report(this.ProgressPercent, "Cancelling...");
 
             this.cancellationToken.Cancel();
+
+            this.cancellationToken.Dispose();
             this.cancellationToken = new CancellationTokenSource();
         }
 

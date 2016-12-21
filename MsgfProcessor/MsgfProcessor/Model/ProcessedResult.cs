@@ -92,7 +92,10 @@
             using (var streamWriter = new StreamWriter(filePath))
             {
                 await streamWriter.WriteLineAsync(
-                      "ResultID\tScan\tFragMethod\tCharge\tPrecursorMZ\tPeptide\tProtein\tDeNovoScore\tMSGFScore\tSpecEValue\tEValue\tQValue\tPepQValue\tIsotopeError\tSequenceCoverage");
+                      "ResultID\tScan\tFragMethod\tCharge\t"
+                    + "PrecursorMZ\tPeptide\tProtein\tDeNovoScore\t"
+                    + "MSGFScore\tSpecEValue\tEValue\tQValue\t" 
+                    + "PepQValue\tIsotopeError\tSequenceCoverage");
 
                 int count = 1;
                 foreach (var result in processedResults)
