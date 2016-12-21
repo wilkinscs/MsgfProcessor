@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-using System.IO;
-using InformedProteomics.Backend.Data.Sequence;
-using InformedProteomics.Backend.Data.Spectrometry;
-
-namespace MsgfProcessor
+﻿namespace MsgfProcessor.Model
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Threading.Tasks;
+
+    using InformedProteomics.Backend.Data.Sequence;
+    using InformedProteomics.Backend.Data.Spectrometry;
+
     public class ProcessedResult
     {
         /// <summary>

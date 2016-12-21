@@ -1,21 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-using InformedProteomics.Backend.Data.Composition;
-using InformedProteomics.Backend.Data.Sequence;
-using InformedProteomics.Backend.Data.Spectrometry;
-using InformedProteomics.Backend.MassSpecData;
-using InformedProteomics.Backend.Results;
-using InformedProteomics.Backend.Utils;
-
-using PSI_Interface.IdentData;
-
-using System.Threading;
-
-namespace MsgfProcessor
+﻿namespace MsgfProcessor.Model
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+
+    using InformedProteomics.Backend.Data.Composition;
+    using InformedProteomics.Backend.Data.Sequence;
+    using InformedProteomics.Backend.Data.Spectrometry;
+    using InformedProteomics.Backend.MassSpecData;
+    using InformedProteomics.Backend.Results;
+    using InformedProteomics.Backend.Utils;
+
+    using PSI_Interface.IdentData;
+
     public class ResultProcessor
     {
         /// <summary>
@@ -72,7 +71,7 @@ namespace MsgfProcessor
 
             // Read mzid file
             var mzidReader = new SimpleMZIdentMLReader();
-            var results = mzidReader.Read(idFilePath);
+            var results = mzidReader.Read(idFilePath, cancellationToken);
 
             // Group IDs into a hash by scan number
             var idMap = results.Identifications.GroupBy(id => id.ScanNum).ToDictionary(scan => scan.Key, ids => ids);

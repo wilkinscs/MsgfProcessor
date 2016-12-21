@@ -1,17 +1,19 @@
-﻿using System;
-using System.Reactive;
-using System.Reactive.Linq;
-using ReactiveUI;
-
-using InformedProteomics.Backend.Utils;
-
-using System.Threading.Tasks;
-
-namespace MsgfProcessor
+﻿namespace MsgfProcessor.ViewModels
 {
+    using System;
     using System.IO;
+    using System.Reactive;
+    using System.Reactive.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
     using System.Windows;
+
+    using InformedProteomics.Backend.MassSpecData;
+    using InformedProteomics.Backend.Utils;
+
+    using MsgfProcessor.Model;
+
+    using ReactiveUI;
 
     public class MainWindowViewModel : ReactiveObject
     {
@@ -61,7 +63,7 @@ namespace MsgfProcessor
             this.RawFileSelector = new FileSelectorViewModel(
                                     "Raw File (*.raw, *.mzml)",
                                     false, 
-                                    ".raw", @"Supported Files|*.raw;*.mzML;*.mzML.gz|Raw Files (*.raw)|*.raw|MzMl Files (*.mzMl[.gz])|*.mzMl;*.mzML.gz");
+                                    ".mzML", MassSpecDataReaderFactory.MassSpecDataTypeFilterString);
 
             this.MzIdFileSelector = new FileSelectorViewModel(
                                     "Identification File (*.mzid)",

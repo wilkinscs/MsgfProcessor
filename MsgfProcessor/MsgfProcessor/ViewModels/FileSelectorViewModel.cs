@@ -1,12 +1,13 @@
-﻿using System;
-using System.IO;
-using System.Reactive;
-using System.Reactive.Linq;
-using Microsoft.Win32;
-using ReactiveUI;
-
-namespace MsgfProcessor
+﻿namespace MsgfProcessor.ViewModels
 {
+    using System.IO;
+    using System.Reactive;
+    using System.Reactive.Linq;
+
+    using Microsoft.Win32;
+
+    using ReactiveUI;
+
     public class FileSelectorViewModel : ReactiveObject
     {
         /// <summary>
