@@ -1,3 +1,0 @@
-﻿namespace MsgfProcessor.ViewModels
-{
-}
