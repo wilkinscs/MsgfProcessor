@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -72,6 +73,21 @@
             // Read mzid file
             var mzidReader = new SimpleMZIdentMLReader();
             var identifications = mzidReader.Read(idFilePath, cancellationToken);
+
+            // Check to make sure raw and MZID file match.
+            var rawFileName = Path.GetFileNameWithoutExtension(rawFilePath);
+
+            var spectrumFileFromId = Path.GetFileNameWithoutExtension(identifications.SpectrumFile);
+            var dtaIndex = spectrumFileFromId.LastIndexOf("_dta");
+            if (dtaIndex >= 0)
+            {
+                spectrumFileFromId = spectrumFileFromId.Substring(0, dtaIndex);
+            }
+
+            if (rawFileName != spectrumFileFromId)
+            {
+                throw new ArgumentException(string.Format("Mismatch between spectrum file ({0}) and id file ({1}).", rawFileName, spectrumFileFromId));
+            }
 
             // Group IDs into a hash by scan number
             var idMap = identifications.Identifications.GroupBy(id => id.ScanNum).ToDictionary(scan => scan.Key, ids => ids);

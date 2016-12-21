@@ -192,15 +192,21 @@
         {
             var processor = new ResultProcessor(this.IonTypeFactoryViewModel.IonTypeFactory);
 
-            var results = await processor.ProcessAsync(
-                this.RawFileSelector.FilePath, 
-                this.MzIdFileSelector.FilePath, 
-                this.cancellationToken.Token, 
-                this.progressReporter);
-
-            if (results.Count > 0)
+            try
             {
-                await ProcessedResult.WriteToFile(results, this.OutputFileSelector.FilePath);
+                var results = await processor.ProcessAsync(
+                                this.RawFileSelector.FilePath,
+                                this.MzIdFileSelector.FilePath,
+                                this.cancellationToken.Token,
+                                this.progressReporter);
+                if (results.Count > 0)
+                {
+                    await ProcessedResult.WriteToFile(results, this.OutputFileSelector.FilePath);
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
             }
 
             this.progressReporter.Report(new ProgressData());
