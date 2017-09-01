@@ -1,6 +1,7 @@
 ﻿namespace MsgfProcessor.Model
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -86,58 +87,65 @@
 
             if (rawFileName != spectrumFileFromId)
             {
-                throw new ArgumentException(string.Format("Mismatch between spectrum file ({0}) and id file ({1}).", rawFileName, spectrumFileFromId));
+                throw new ArgumentException($"Mismatch between spectrum file ({rawFileName}) and id file ({spectrumFileFromId}).");
             }
 
             // Group IDs into a hash by scan number
             var idMap = identifications.Identifications.GroupBy(id => id.ScanNum).ToDictionary(scan => scan.Key, ids => ids);
 
-            var processedResults = new List<ProcessedResult>();
+            var processedResults = new ConcurrentBag<ProcessedResult>();
 
             // Load raw file
             using (var lcms = MassSpecDataReaderFactory.GetMassSpecDataReader(rawFilePath))
             {
                 int count = 0;
-                foreach (var spectrum in lcms.ReadAllSpectra())
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                    {   // Cancel if necessary
-                        return new List<ProcessedResult>();
-                    }
+                Parallel.ForEach(
+                    lcms.ReadAllSpectra(),
+                    spectrum =>
+                        {
+                            if (cancellationToken.IsCancellationRequested)
+                            {   // Cancel if necessary
+                                return;
+                            }
 
-                    // Report completion percentage and current scan number
-                    progressData.Report(count++, lcms.NumSpectra, $"Scan: {spectrum?.ScanNum ?? '-'}");
+                            // Report completion percentage and current scan number
+                            if (count % (int)Math.Max(0.01 * lcms.NumSpectra, 1) == 0)
+                            {
+                                progressData.Report(count, lcms.NumSpectra, $"{Math.Round(100.0*count / lcms.NumSpectra)}%");
+                            }
 
-                    // Skip spectrum if it isn't MS2
-                    var productSpectrum = spectrum as ProductSpectrum;
-                    if (productSpectrum == null || !idMap.ContainsKey(spectrum.ScanNum))
-                    {
-                        continue;
-                    }
+                            Interlocked.Increment(ref count);
 
-                    var specResults = idMap[spectrum.ScanNum];
+                            // Skip spectrum if it isn't MS2
+                            var productSpectrum = spectrum as ProductSpectrum;
+                            if (productSpectrum == null || !idMap.ContainsKey(spectrum.ScanNum))
+                            {
+                                return;
+                            }
 
-                    var results = from specResult in specResults
-                                  let sequence = specResult.Peptide.GetIpSequence()
-                                  let coverage = this.CalculateSequenceCoverage(productSpectrum, sequence, specResult.Charge)
-                                  select new ProcessedResult
-                                  {
-                                      ScanNum = spectrum.ScanNum,
-                                      Sequence = sequence,
-                                      Charge = specResult.Charge,
-                                      PrecursorMz = specResult.CalMz,
-                                      DeNovoScore = specResult.DeNovoScore,
-                                      SpecEValue = specResult.SpecEv,
-                                      EValue = specResult.EValue,
-                                      QValue = specResult.QValue,
-                                      PepQValue = specResult.PepQValue,
-                                      FragMethod = productSpectrum.ActivationMethod,
-                                      IsotopeError = specResult.IsoError,
-                                      SequenceCoverage = Math.Round(coverage),
-                                  };
+                            var specResults = idMap[spectrum.ScanNum];
 
-                    processedResults.AddRange(results);
-                }
+                            var results = from specResult in specResults
+                                          let sequence = specResult.Peptide.GetIpSequence()
+                                          let coverage = this.CalculateSequenceCoverage(productSpectrum, sequence, specResult.Charge)
+                                          select new ProcessedResult
+                                          {
+                                              ScanNum = spectrum.ScanNum,
+                                              Sequence = sequence,
+                                              Charge = specResult.Charge,
+                                              PrecursorMz = specResult.CalMz,
+                                              DeNovoScore = specResult.DeNovoScore,
+                                              SpecEValue = specResult.SpecEv,
+                                              EValue = specResult.EValue,
+                                              QValue = specResult.QValue,
+                                              PepQValue = specResult.PepQValue,
+                                              FragMethod = productSpectrum.ActivationMethod,
+                                              IsotopeError = specResult.IsoError,
+                                              SequenceCoverage = Math.Round(coverage),
+                                          };
+
+                            foreach (var result in results) processedResults.Add(result);
+                        });
             }
 
             // Sort spectra by SpecEValue
@@ -153,16 +161,18 @@
         /// <returns>The sequence coverage.</returns>
         private double CalculateSequenceCoverage(ProductSpectrum spectrum, Sequence sequence, int charge)
         {
-            var ions = this.ionTypeFactory.GetAllKnownIonTypes().ToList();
+            var ionTypes = this.ionTypeFactory.GetAllKnownIonTypes().ToList();
 
             int found = 0;
             for (int clv = 1; clv < sequence.Count; clv++)
             {
                 bool haveFoundClv = false;
-                var nTermSeq = sequence.GetRange(0, clv).Aggregate(Composition.Zero, (l, r) => l + r.Composition);
-                var cTermSeq = sequence.GetRange(clv, sequence.Count - clv).Aggregate(Composition.Zero, (l, r) => l + r.Composition);
+                var nTermSeq = sequence.GetRange(0, clv);
+                var nTermComp = nTermSeq.Aggregate(Composition.Zero, (l, r) => l + r.Composition);
+                var cTermSeq = sequence.GetRange(clv, sequence.Count - clv);
+                var cTermComp = cTermSeq.Aggregate(Composition.Zero, (l, r) => l + r.Composition);
 
-                foreach (var ionType in ions)
+                foreach (var ionType in ionTypes)
                 {
                     if (haveFoundClv)
                     {
@@ -174,12 +184,17 @@
                         continue;
                     }
 
-                    var comp = ionType.IsPrefixIon ? nTermSeq : cTermSeq;
-                    var ion = ionType.GetIon(comp);
-                    if (spectrum.GetCorrScore(ion, this.tolerance) > 0.7)
+                    var comp = ionType.IsPrefixIon ? nTermComp : cTermComp;
+                    var aa = ionType.IsPrefixIon ? nTermSeq[nTermSeq.Count - 1] : cTermSeq[0];
+                    var ions = ionType.GetPossibleIons(comp, aa);
+                    foreach (var ion in ions)
                     {
-                        found++;
-                        haveFoundClv = true;
+                        if (spectrum.GetCorrScore(ion, this.tolerance) > 0.7)
+                        {
+                            found++;
+                            haveFoundClv = true;
+                            break;
+                        }
                     }
                 }
             }

@@ -1,5 +1,6 @@
 ﻿namespace MsgfProcessor.ViewModels
 {
+    using System.Collections.Generic;
     using System.Linq;
 
     using InformedProteomics.Backend.Data.Spectrometry;
@@ -27,13 +28,8 @@
                     NeutralLoss.CommonNeutralLosses.Select(nl => new SelectableItemViewModel<NeutralLoss>(nl)));
 
             // Select default ion types
-            var defaultIonTypes = this.IonTypes.Where(ionType => ionType.Item.Symbol == "a" || 
-                                                                 ionType.Item.Symbol == "b" ||
-                                                                 ionType.Item.Symbol == "c" ||
-                                                                 ionType.Item.Symbol == "x" ||
-                                                                 ionType.Item.Symbol == "y" ||
-                                                                 ionType.Item.Symbol == "z");
-            foreach (var ionTypeVm in defaultIonTypes)
+            var selectedIonTypes = new HashSet<BaseIonType> { BaseIonType.A, BaseIonType.B, BaseIonType.C, BaseIonType.X, BaseIonType.Y, BaseIonType.Z };
+            foreach (var ionTypeVm in this.IonTypes.Where(ionType => selectedIonTypes.Contains(ionType.Item)))
             {
                 ionTypeVm.IsSelected = true;
             }

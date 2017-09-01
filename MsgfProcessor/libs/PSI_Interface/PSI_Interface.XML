@@ -28036,6 +28036,11 @@
             Protein description
             </summary>
         </member>
+        <member name="P:PSI_Interface.IdentData.SimpleMZIdentMLReader.DatabaseSequence.DatabaseId">
+            <summary>
+            Database Id - internal reference in mzid file
+            </summary>
+        </member>
         <member name="T:PSI_Interface.IdentData.SimpleMZIdentMLReader.Modification">
             <summary>
             Modification information
@@ -28097,6 +28102,11 @@
         <member name="P:PSI_Interface.IdentData.SimpleMZIdentMLReader.PeptideEvidence.IsDecoy">
             <summary>
             If the result is a decoy
+            </summary>
+        </member>
+        <member name="P:PSI_Interface.IdentData.SimpleMZIdentMLReader.PeptideEvidence.HadDecoyAttribute">
+            <summary>
+            Set to true if the 'isDecoy' attribute was present in the mzid file for this peptide evidence
             </summary>
         </member>
         <member name="P:PSI_Interface.IdentData.SimpleMZIdentMLReader.PeptideEvidence.Post">
@@ -28263,6 +28273,14 @@
         <member name="M:PSI_Interface.IdentData.SimpleMZIdentMLReader.ReadInputs(System.Xml.XmlReader)">
             <summary>
             Handle child nodes of Inputs element
+            Called by ReadDataCollection (xml hierarchy)
+            Currently we are only working with the SpectraData child elements
+            </summary>
+            <param name="reader">XmlReader that is only valid for the scope of the single AnalysisData element</param>
+        </member>
+        <member name="M:PSI_Interface.IdentData.SimpleMZIdentMLReader.ReadSearchDatabase(System.Xml.XmlReader)">
+            <summary>
+            Handle child nodes of SeachDatabase element
             Called by ReadDataCollection (xml hierarchy)
             Currently we are only working with the SpectraData child elements
             </summary>
@@ -31501,6 +31519,11 @@
             Array of intensity values
             </summary>
         </member>
+        <member name="P:PSI_Interface.MSData.SimpleMzMLReader.SimpleSpectrum.Peaks">
+            <summary>
+            Array of peak data
+            </summary>
+        </member>
         <member name="P:PSI_Interface.MSData.SimpleMzMLReader.SimpleSpectrum.TotalIonCurrent">
             <summary>
             Total Ion Current
@@ -31518,6 +31541,28 @@
             <param name="mzs">array of mzs</param>
             <param name="intensities">array of intensities</param>
             <param name="scanNum">spectrum scan number</param>
+        </member>
+        <member name="M:PSI_Interface.MSData.SimpleMzMLReader.SimpleSpectrum.#ctor(PSI_Interface.MSData.SimpleMzMLReader.Peak[],System.Int32)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="peaks">array of peaks</param>
+            <param name="scanNum">spectrum scan number</param>
+        </member>
+        <member name="T:PSI_Interface.MSData.SimpleMzMLReader.Peak">
+            <summary>
+            Peak data
+            </summary>
+        </member>
+        <member name="P:PSI_Interface.MSData.SimpleMzMLReader.Peak.Mz">
+            <summary>
+            Peak m/z
+            </summary>
+        </member>
+        <member name="P:PSI_Interface.MSData.SimpleMzMLReader.Peak.Intensity">
+            <summary>
+            Peak intensity
+            </summary>
         </member>
         <member name="T:PSI_Interface.MSData.SimpleMzMLReader.SimpleProductSpectrum">
             <summary>
@@ -31560,6 +31605,13 @@
             </summary>
             <param name="mzs">array of mzs</param>
             <param name="intensities">array of intensities</param>
+            <param name="scanNum">spectrum scan number</param>
+        </member>
+        <member name="M:PSI_Interface.MSData.SimpleMzMLReader.SimpleProductSpectrum.#ctor(PSI_Interface.MSData.SimpleMzMLReader.Peak[],System.Int32)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="peaks">array of peaks</param>
             <param name="scanNum">spectrum scan number</param>
         </member>
         <member name="M:PSI_Interface.MSData.SimpleMzMLReader.#ctor(System.String,System.Boolean,System.Boolean)">
@@ -31649,6 +31701,12 @@
             <summary>
             Close the file handles and cleanup any temp files
             </summary>
+        </member>
+        <member name="M:PSI_Interface.MSData.SimpleMzMLReader.Dispose(System.Boolean)">
+            <summary>
+            Dispose, with a decreased chance of issues/failure
+            </summary>
+            <param name="disposing"></param>
         </member>
         <member name="M:PSI_Interface.MSData.SimpleMzMLReader.ClearDataCache">
             <summary>
